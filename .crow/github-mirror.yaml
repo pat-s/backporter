@@ -1,0 +1,16 @@
+when:
+  - event: tag
+
+depends_on:
+  - release
+
+steps:
+  'Push to GitHub mirror':
+    image: reg.devxy.io/docker.io/appleboy/drone-git-push:1.1.1
+    settings:
+      remote: ssh://git@github.com/pat-s/backporter.git
+      branch: main
+      force: true
+      followtags: true
+      ssh_key:
+        from_secret: homebrew-tap-deploy-key

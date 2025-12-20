@@ -139,7 +139,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.FORGEJO_TOKEN }}
 
-      - uses: pat-s/backporter@v1
+      - uses: codefloe.com/pat-s/backporter@v1
         with:
           token: ${{ secrets.FORGEJO_TOKEN }}
           forge-type: forgejo
