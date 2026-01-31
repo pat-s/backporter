@@ -1,6 +1,6 @@
 clone:
   git:
-    image: codeberg.org/crow-plugins/clone:1.0.3
+    image: codefloe.com/crow-plugins/clone:1.0.3
     settings:
       tags: true
 
@@ -14,7 +14,7 @@ steps:
     environment:
       ISSUE_TOKEN:
         from_secret: codefloe_issue_token
-    image: reg.devxy.io/docker.io/thegeeklab/git-sv:2.0.9
+    image: cr.codefloe.com/docker.io/thegeeklab/git-sv:2.0.9
     commands: |
       apk add -q --no-cache curl jq sed
       git sv rn -o changelog.md
