@@ -301,11 +301,11 @@ func processCIBackport(
 func formatBackportPRBody(originalPR *forge.PRInfo, targetBranch string) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Backport of #%d to `%s`.\n\n", originalPR.Number, targetBranch))
+	fmt.Fprintf(&sb, "Backport of #%d to `%s`.\n\n", originalPR.Number, targetBranch)
 	sb.WriteString("## Original PR\n\n")
-	sb.WriteString(fmt.Sprintf("- **Title**: %s\n", originalPR.Title))
-	sb.WriteString(fmt.Sprintf("- **Author**: @%s\n", originalPR.Author))
-	sb.WriteString(fmt.Sprintf("- **Merged**: %s\n", originalPR.MergedAt.Format("2006-01-02 15:04:05 UTC")))
+	fmt.Fprintf(&sb, "- **Title**: %s\n", originalPR.Title)
+	fmt.Fprintf(&sb, "- **Author**: @%s\n", originalPR.Author)
+	fmt.Fprintf(&sb, "- **Merged**: %s\n", originalPR.MergedAt.Format("2006-01-02 15:04:05 UTC"))
 
 	if originalPR.Body != "" {
 		sb.WriteString("\n## Original Description\n\n")
