@@ -40,7 +40,7 @@ steps:
       - git archive --format=tar.gz --prefix=backporter-${CI_COMMIT_TAG#v}/ -o dist/backporter-${CI_COMMIT_TAG#v}.tar.gz HEAD
 
   'Create release':
-    image: cr.codefloe.com/docker.io/woodpeckerci/plugin-release:0.2.6
+    image: cr.codefloe.com/docker.io/woodpeckerci/plugin-release:0.3.0
     settings:
       note: CHANGELOG.md
       api_key:
