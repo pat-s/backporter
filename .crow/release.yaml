@@ -76,7 +76,7 @@ steps:
       - sed -i "/linux_amd64/{n;s/sha256 \"[^\"]*\"/sha256 \"$${SHA_LINUX_AMD64}\"/;}" Formula/backporter.rb
 
   'Push changes to homebrew-tap':
-    image: reg.devxy.io/docker.io/appleboy/drone-git-push:1.1.1
+    image: reg.devxy.io/docker.io/appleboy/drone-git-push:1.2.3
     settings:
       path: homebrew-tap
       remote: ssh://git@${CI_FORGE_URL#https://}/${CI_REPO_OWNER}/homebrew-tap.git
