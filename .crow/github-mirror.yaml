@@ -6,7 +6,7 @@ depends_on:
 
 steps:
   'Push to GitHub mirror':
-    image: reg.devxy.io/docker.io/appleboy/drone-git-push:1.1.1
+    image: reg.devxy.io/docker.io/appleboy/drone-git-push:1.2.3
     settings:
       remote: ssh://git@github.com/pat-s/backporter.git
       branch: main
