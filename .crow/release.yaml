@@ -24,7 +24,7 @@ steps:
       - just build-all
 
   changelog:
-    image: cr.codefloe.com/docker.io/thegeeklab/git-sv:2.1.0
+    image: cr.codefloe.com/docker.io/thegeeklab/git-sv:2.1.1
     commands:
       - apk add --no-cache -q sed
       - git sv current-version
