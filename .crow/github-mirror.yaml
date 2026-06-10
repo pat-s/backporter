@@ -23,7 +23,7 @@ steps:
       - sed -i '1,2d' CHANGELOG.md
 
   'Create GitHub release':
-    image: cr.codefloe.com/docker.io/library/alpine:3.23
+    image: cr.codefloe.com/docker.io/library/alpine:3.24
     environment:
       GITHUB_TOKEN:
         from_secret: github_release_token
