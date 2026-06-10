@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 go build -ldflags "-s -w -extldflags '-static' -X codefloe.com/pat-s/backporter/shared/version.Version=${VERSION:-dev}" -o /backporter ./cmd/backporter
 
-FROM alpine:3.23
+FROM alpine:3.24
 
 LABEL org.label-schema.license="MIT" \
       org.label-schema.vcs-url="https://codefloe.com/pat-s/backporter" \
