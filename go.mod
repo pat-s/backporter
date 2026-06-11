@@ -9,7 +9,7 @@ require (
 	github.com/google/go-github/v80 v80.0.0
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.9.0
+	github.com/urfave/cli/v3 v3.9.1
 	golang.org/x/term v0.44.0
 )
 
