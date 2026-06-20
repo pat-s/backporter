@@ -16,7 +16,7 @@ steps:
         from_secret: homebrew-tap-deploy-key
 
   changelog:
-    image: reg.devxy.io/docker.io/thegeeklab/git-sv:2.0.9
+    image: reg.devxy.io/docker.io/thegeeklab/git-sv:2.1.3
     commands:
       - apk add --no-cache -q sed
       - git sv release-notes -t ${CI_COMMIT_TAG} -o CHANGELOG.md
