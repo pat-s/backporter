@@ -4,7 +4,7 @@ when:
 
 steps:
   - name: scan
-    image: cr.codefloe.com/docker.io/aquasec/trivy:0.71.2
+    image: cr.codefloe.com/docker.io/aquasec/trivy:0.72.0
     environment:
       TRIVY_DISABLE_VEX_NOTICE: true
     commands:
