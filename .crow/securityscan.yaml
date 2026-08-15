@@ -4,7 +4,7 @@ when:
 
 steps:
   - name: scan
-    image: reg.devxy.io/docker.io/aquasec/trivy:0.68.1
+    image: reg.devxy.io/docker.io/aquasec/trivy:0.74.0
     environment:
       TRIVY_DISABLE_VEX_NOTICE: true
     commands:
