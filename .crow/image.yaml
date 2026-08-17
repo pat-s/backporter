@@ -1,5 +1,5 @@
 variables:
-  - &buildx_plugin 'codeberg.org/crow-plugins/docker-buildx:2.0.1'
+  - &buildx_plugin 'codeberg.org/crow-plugins/docker-buildx:2.5.0'
   - &platforms_pr 'linux/amd64'
   - &platforms_release 'linux/arm64,linux/amd64'
   - &build_args 'CI_COMMIT_SHA=${CI_COMMIT_SHA},CI_COMMIT_TAG=${CI_COMMIT_TAG}'
