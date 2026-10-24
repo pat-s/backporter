@@ -11,7 +11,7 @@ steps:
       - trivy fs --format template --template @assets/trivy-markdown.tpl --skip-dirs vendor,node_modules/,extras . > scan.md
 
   - name: Update issue
-    image: reg.devxy.io/docker.io/library/alpine:3.23
+    image: reg.devxy.io/docker.io/library/alpine:3.24
     environment:
       ISSUE_TOKEN:
         from_secret: codefloe_issue_token

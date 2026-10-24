@@ -34,7 +34,7 @@ steps:
 
   # the dynamic release source tarball changes it checksum frequently
   source-tarball:
-    image: reg.devxy.io/docker.io/library/alpine:3.23
+    image: reg.devxy.io/docker.io/library/alpine:3.24
     commands:
       - apk add --no-cache -q git
       - git archive --format=tar.gz --prefix=backporter-${CI_COMMIT_TAG#v}/ -o dist/backporter-${CI_COMMIT_TAG#v}.tar.gz HEAD
@@ -50,7 +50,7 @@ steps:
       title: ${CI_COMMIT_TAG}
 
   'Bump version in homebrew-tap':
-    image: reg.devxy.io/docker.io/library/alpine:3.23
+    image: reg.devxy.io/docker.io/library/alpine:3.24
     commands:
       - apk add --no-cache -q curl git sed
       - git clone ${CI_FORGE_URL}/${CI_REPO_OWNER}/homebrew-tap.git
