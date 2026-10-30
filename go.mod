@@ -3,7 +3,7 @@ module codefloe.com/pat-s/backporter
 go 1.24.2
 
 require (
-	github.com/charmbracelet/huh v0.8.0
+	github.com/charmbracelet/huh/v2 v2.0.3
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/goccy/go-yaml v1.19.1
 	github.com/google/go-github/v80 v80.0.0
