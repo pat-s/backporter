@@ -1,12 +1,13 @@
 module codefloe.com/pat-s/backporter
 
-go 1.24.2
+go 1.26.0
 
 require (
 	github.com/charmbracelet/huh v0.8.0
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/goccy/go-yaml v1.19.1
 	github.com/google/go-github/v80 v80.0.0
+	github.com/google/go-github/v93 v93.0.0
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.6.1
@@ -40,7 +41,7 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.7.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
