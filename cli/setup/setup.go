@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/huh"
+	"charm.land/huh/v2"
 	"github.com/rs/zerolog/log"
 
 	"codefloe.com/pat-s/backporter/pkg/config"
