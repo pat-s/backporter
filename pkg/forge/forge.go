@@ -54,7 +54,7 @@ func New(forgeType, token string) (Forge, error) {
 func NewWithOptions(forgeType, token string, opts NewOptions) (Forge, error) {
 	switch forgeType {
 	case "github":
-		return NewGitHub(token), nil
+		return NewGitHub(token)
 	case "forgejo":
 		// Forgejo requires a base URL - check options first, then environment.
 		baseURL := opts.ForgejoURL

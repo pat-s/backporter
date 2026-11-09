@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
@@ -98,7 +99,8 @@ func TestPRInfoIsSquashMerge(t *testing.T) {
 }
 
 func TestGitHubName(t *testing.T) {
-	gh := NewGitHub("test-token")
+	gh, err := NewGitHub("test-token")
+	require.NoError(t, err)
 	assert.Equal(t, "github", gh.Name())
 }
 

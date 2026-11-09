@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v80/github"
+	"github.com/google/go-github/v93/github"
 )
 
 // GitHub implements the Forge interface for GitHub.
@@ -13,16 +13,18 @@ type GitHub struct {
 }
 
 // NewGitHub creates a new GitHub forge client.
-func NewGitHub(token string) *GitHub {
-	var client *github.Client
-
+func NewGitHub(token string) (*GitHub, error) {
+	var opts []github.ClientOptionsFunc
 	if token != "" {
-		client = github.NewClient(nil).WithAuthToken(token)
-	} else {
-		client = github.NewClient(nil)
+		opts = append(opts, github.WithAuthToken(token))
 	}
 
-	return &GitHub{client: client}
+	client, err := github.NewClient(opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GitHub client: %w", err)
+	}
+
+	return &GitHub{client: client}, nil
 }
 
 // Name returns the name of the forge.
@@ -144,11 +146,11 @@ func (g *GitHub) ListRecentPRs(ctx context.Context, owner, repo string, limit in
 
 // CreatePR creates a new pull request and returns its number.
 func (g *GitHub) CreatePR(ctx context.Context, owner, repo string, opts CreatePROptions) (int, error) {
-	newPR := &github.NewPullRequest{
-		Title: github.Ptr(opts.Title),
-		Body:  github.Ptr(opts.Body),
-		Head:  github.Ptr(opts.Head),
-		Base:  github.Ptr(opts.Base),
+	newPR := github.CreatePullRequest{
+		Title: new(opts.Title),
+		Body:  new(opts.Body),
+		Head:  opts.Head,
+		Base:  opts.Base,
 	}
 
 	pr, _, err := g.client.PullRequests.Create(ctx, owner, repo, newPR)
