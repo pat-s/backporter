@@ -74,6 +74,8 @@ steps:
       - sed -i "/darwin_amd64/{n;s/sha256 \"[^\"]*\"/sha256 \"$${SHA_DARWIN_AMD64}\"/;}" Formula/backporter.rb
       - sed -i "/linux_arm64/{n;s/sha256 \"[^\"]*\"/sha256 \"$${SHA_LINUX_ARM64}\"/;}" Formula/backporter.rb
       - sed -i "/linux_amd64/{n;s/sha256 \"[^\"]*\"/sha256 \"$${SHA_LINUX_AMD64}\"/;}" Formula/backporter.rb
+      # drone-git-push >= 1.2.6 runs as 1000:1000 and must be able to write .git/config
+      - chown -R 1000:1000 .
 
   'Push changes to homebrew-tap':
     image: cr.codefloe.com/docker.io/appleboy/drone-git-push:1.2.6
