@@ -20,7 +20,8 @@ type Config struct {
 	// Forgejo/Gitea instance URL (only for forgejo forge type).
 	ForgejoURL string `yaml:"forgejo_url,omitempty"`
 
-	// Default target branches for backporting (supports regex).
+	// Default target branches for backporting. In CI mode, "latest:<glob>"
+	// resolves to the newest matching branch of the remote.
 	TargetBranches []string `yaml:"target_branches"`
 
 	// Default commit message template.

@@ -24,6 +24,11 @@ var Command = &cli.Command{
 			Name:  "dry-run",
 			Usage: "show what would be done without making changes (CI mode only)",
 		},
+		&cli.IntFlag{
+			Name:    "pr",
+			Usage:   "number of the merged PR to backport (CI mode only; detected from the CI environment if not set)",
+			Sources: cli.EnvVars("BACKPORTER_PR"),
+		},
 	},
 	Action: func(ctx context.Context, c *cli.Command) error {
 		if c.Bool("ci") {

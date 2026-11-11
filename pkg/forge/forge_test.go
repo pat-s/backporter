@@ -1,6 +1,9 @@
 package forge
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -169,4 +172,39 @@ func TestPRInfoHasBackportLabel(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestForgejoCommentOnPR(t *testing.T) {
+	var gotPath, gotAuth, gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.Method + " " + r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		var payload struct {
+			Body string `json:"body"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&payload)
+		gotBody = payload.Body
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":1}`))
+	}))
+	defer srv.Close()
+
+	f := NewForgejo(srv.URL, "secret")
+	err := f.CommentOnPR(t.Context(), "owner", "repo", 42, "hello")
+	require.NoError(t, err)
+	assert.Equal(t, "POST /api/v1/repos/owner/repo/issues/42/comments", gotPath)
+	assert.Equal(t, "token secret", gotAuth)
+	assert.Equal(t, "hello", gotBody)
+}
+
+func TestForgejoCommentOnPRError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"token lacks scope"}`))
+	}))
+	defer srv.Close()
+
+	err := NewForgejo(srv.URL, "").CommentOnPR(t.Context(), "owner", "repo", 42, "hello")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "token lacks scope")
 }

@@ -41,7 +41,13 @@ func backportPR(ctx context.Context, c *cli.Command) error {
 		if len(cfg.TargetBranches) == 0 {
 			return fmt.Errorf("usage: backport pr <pr-number> <target-branch>\n       (or configure target_branches in .backporter.yaml)")
 		}
-		targetBranches = cfg.TargetBranches
+		targetBranches, err = resolveConfiguredTargets(cfg.TargetBranches, cfg.Remote)
+		if err != nil {
+			return err
+		}
+		if len(targetBranches) == 0 {
+			return fmt.Errorf("no configured target branch exists")
+		}
 	}
 
 	service, err := internal.CreateService(ctx, c)

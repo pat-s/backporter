@@ -206,3 +206,12 @@ func (g *GitHub) ListOpenPRs(ctx context.Context, owner, repo string, opts ListP
 
 	return result, nil
 }
+
+// CommentOnPR posts a comment on a pull request.
+func (g *GitHub) CommentOnPR(ctx context.Context, owner, repo string, number int, body string) error {
+	comment := github.IssueCommentRequest{Body: body}
+	if _, _, err := g.client.Issues.CreateComment(ctx, owner, repo, number, comment); err != nil {
+		return fmt.Errorf("failed to comment on PR #%d: %w", number, err)
+	}
+	return nil
+}

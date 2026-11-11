@@ -284,3 +284,23 @@ func TestAmendCommitMessage(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, newMessage+"\n", msg) // Git commit messages always have a trailing newline
 }
+
+func TestListRemoteBranches(t *testing.T) {
+	repoPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	t.Chdir(repoPath)
+
+	for _, ref := range []string{"main", "release/v0.9", "release/v0.10"} {
+		cmd := exec.Command("git", "update-ref", "refs/remotes/origin/"+ref, "HEAD")
+		require.NoError(t, cmd.Run())
+	}
+	cmd := exec.Command("git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+	require.NoError(t, cmd.Run())
+	cmd = exec.Command("git", "update-ref", "refs/remotes/other/stable", "HEAD")
+	require.NoError(t, cmd.Run())
+
+	branches, err := ListRemoteBranches("origin")
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"main", "release/v0.9", "release/v0.10"}, branches)
+}

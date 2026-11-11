@@ -10,11 +10,13 @@ forge_type: github
 # Can also be set via FORGEJO_URL environment variable
 # forgejo_url: https://codeberg.org
 
-# Default target branches for backporting (supports regex patterns)
+# Default target branches for backporting
 target_branches:
   - release-1.x
   - release-2.x
   - stable
+  # In CI mode, "latest:<glob>" resolves to the newest matching branch
+  # - latest:release/v*
 
 # Custom commit message template (optional)
 # Available variables: {{.OriginalMessage}}

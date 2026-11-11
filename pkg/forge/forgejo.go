@@ -378,3 +378,36 @@ func (f *Forgejo) ListOpenPRs(ctx context.Context, owner, repo string, opts List
 
 	return result, nil
 }
+
+// CommentOnPR posts a comment on a pull request.
+func (f *Forgejo) CommentOnPR(ctx context.Context, owner, repo string, number int, body string) error {
+	url := fmt.Sprintf("%s/api/v1/repos/%s/%s/issues/%d/comments", f.baseURL, owner, repo, number)
+
+	jsonBody, err := json.Marshal(map[string]string{"body": body})
+	if err != nil {
+		return fmt.Errorf("failed to marshal comment: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(string(jsonBody)))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if f.token != "" {
+		req.Header.Set("Authorization", "token "+f.token)
+	}
+
+	resp, err := f.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to comment on PR #%d: %w", number, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to comment on PR #%d: %s (%s)", number, resp.Status, parseForgejoError(respBody))
+	}
+
+	return nil
+}

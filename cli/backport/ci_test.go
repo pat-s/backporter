@@ -1,10 +1,14 @@
 package backport
 
 import (
+	"errors"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"codefloe.com/pat-s/backporter/pkg/forge"
 )
@@ -395,4 +399,93 @@ func TestCIResultStates(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDetectPRNumber(t *testing.T) {
+	env := func(vars map[string]string) func(string) string {
+		return func(name string) string { return vars[name] }
+	}
+
+	tests := []struct {
+		name   string
+		flag   int
+		vars   map[string]string
+		number int
+		source string
+	}{
+		{
+			name:   "flag wins",
+			flag:   7,
+			vars:   map[string]string{"CI_COMMIT_REF": "refs/pull/12/head"},
+			number: 7,
+			source: "--pr flag",
+		},
+		{
+			name:   "Crow pull request event",
+			vars:   map[string]string{"CI_COMMIT_REF": "refs/pull/12/head", "CI_COMMIT_SHA": "abc"},
+			number: 12,
+			source: "CI_COMMIT_REF",
+		},
+		{
+			name:   "GitHub pull request event",
+			vars:   map[string]string{"GITHUB_REF": "refs/pull/34/merge", "GITHUB_SHA": "abc"},
+			number: 34,
+			source: "GITHUB_REF",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			number, source, err := detectPRNumber(tt.flag, env(tt.vars), "origin/main")
+			require.NoError(t, err)
+			assert.Equal(t, tt.number, number)
+			assert.Equal(t, tt.source, source)
+		})
+	}
+}
+
+func TestDetectPRNumberFromPushedCommit(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "fix: first (#5)"},
+		{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "feat: second (#6)"},
+	} {
+		require.NoError(t, exec.Command("git", args...).Run())
+	}
+	out, err := exec.Command("git", "rev-parse", "HEAD~1").Output()
+	require.NoError(t, err)
+	first := strings.TrimSpace(string(out))
+
+	// A push event names the pushed commit, which need not be the newest one.
+	vars := map[string]string{"CI_COMMIT_REF": "refs/heads/main", "CI_COMMIT_SHA": first}
+	number, source, err := detectPRNumber(0, func(n string) string { return vars[n] }, "HEAD")
+	require.NoError(t, err)
+	assert.Equal(t, 5, number)
+	assert.Equal(t, "commit CI_COMMIT_SHA", source)
+
+	// Without CI variables, the newest commit on the fallback ref is used.
+	number, _, err = detectPRNumber(0, func(string) string { return "" }, "HEAD")
+	require.NoError(t, err)
+	assert.Equal(t, 6, number)
+}
+
+func TestFormatFailureComment(t *testing.T) {
+	assert.Empty(t, formatFailureComment([]CIResult{
+		{TargetBranch: "release/v0.2", Success: true, PRNumber: 9},
+		{TargetBranch: "release/v0.1", Skipped: true, Success: true, Error: errors.New("ignored")},
+	}, 4))
+
+	body := formatFailureComment([]CIResult{
+		{TargetBranch: "release/v0.2", Success: true, PRNumber: 9},
+		{
+			TargetBranch: "release/v0.3",
+			Error:        errors.New("cherry-pick has conflicts"),
+			Message:      "cherry-pick has conflicts - manual backport required",
+		},
+	}, 4)
+	assert.Contains(t, body, "- `release/v0.3`: cherry-pick has conflicts - manual backport required")
+	assert.Contains(t, body, "backporter backport pr 4 release/v0.3")
+	assert.NotContains(t, body, "release/v0.2")
 }

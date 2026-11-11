@@ -3,7 +3,9 @@ package backport
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -68,28 +70,22 @@ func backportCI(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("failed to fetch from remote: %w", err)
 	}
 
-	// 5. Get the most recent commit on the default branch from remote.
+	// 5. Find the merged PR this run is about.
 	defaultBranch := cfg.DefaultBranch
 	if defaultBranch == "" {
 		defaultBranch = "main"
 	}
-	remoteRef := fmt.Sprintf("%s/%s", cfg.Remote, defaultBranch)
 
-	commitMsg, err := git.GetCommitMessage(remoteRef)
+	prNumber, source, err := detectPRNumber(c.Int("pr"), os.Getenv, cfg.Remote+"/"+defaultBranch)
 	if err != nil {
-		return fmt.Errorf("failed to get commit message from %s: %w", remoteRef, err)
+		return err
 	}
-
-	log.Debug().Str("ref", remoteRef).Str("message", commitMsg).Msg("default branch commit message")
-
-	// 6. Parse PR number from commit message.
-	prNumber := parsePRNumber(commitMsg)
 	if prNumber == 0 {
-		log.Info().Msg("no PR number found in commit message, skipping backport")
+		log.Info().Str("source", source).Msg("no PR number found, skipping backport")
 		return nil
 	}
 
-	log.Info().Int("pr", prNumber).Msg("found PR number in commit")
+	log.Info().Int("pr", prNumber).Str("source", source).Msg("found PR number")
 
 	// 7. Fetch PR info including labels.
 	prInfo, err := forgeClient.GetPR(ctx, owner, repoName, prNumber)
@@ -108,9 +104,17 @@ func backportCI(ctx context.Context, c *cli.Command) error {
 	log.Info().Msg("PR has backport label, proceeding with backport")
 
 	// 9. Get target branches from config.
-	targetBranches := cfg.TargetBranches
-	if len(targetBranches) == 0 {
+	if len(cfg.TargetBranches) == 0 {
 		return fmt.Errorf("no target branches configured in config file")
+	}
+
+	targetBranches, err := resolveConfiguredTargets(cfg.TargetBranches, cfg.Remote)
+	if err != nil {
+		return err
+	}
+	if len(targetBranches) == 0 {
+		log.Info().Msg("no target branches to backport to")
+		return nil
 	}
 
 	log.Info().Strs("branches", targetBranches).Msg("target branches")
@@ -134,6 +138,13 @@ func backportCI(ctx context.Context, c *cli.Command) error {
 	// 12. Output summary.
 	outputCISummary(results, prNumber)
 
+	// 13. Tell the original PR about backports that need doing by hand.
+	if body := formatFailureComment(results, prNumber); body != "" && !dryRun {
+		if err := forgeClient.CommentOnPR(ctx, owner, repoName, prNumber, body); err != nil {
+			log.Warn().Err(err).Int("pr", prNumber).Msg("failed to comment on PR")
+		}
+	}
+
 	// Check if any failed.
 	for _, r := range results {
 		if r.Error != nil && !r.Skipped {
@@ -142,6 +153,72 @@ func backportCI(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
+}
+
+// pullRefPattern matches the ref of a pull request, as CI systems set it for
+// pull request events: refs/pull/<n>/head (Crow, Woodpecker) or
+// refs/pull/<n>/merge (GitHub and Forgejo Actions).
+var pullRefPattern = regexp.MustCompile(`^refs/pull/(\d+)/`)
+
+// detectPRNumber finds the number of the PR to backport. In order, it uses
+// the --pr flag, the pull request ref of a pull request event, the message of
+// the commit a push event ran for, and the message of the newest commit on
+// fallbackRef. It returns the number (0 if none was found) and where it came from.
+func detectPRNumber(flag int, getenv func(string) string, fallbackRef string) (int, string, error) {
+	if flag > 0 {
+		return flag, "--pr flag", nil
+	}
+
+	for _, name := range []string{"CI_COMMIT_REF", "GITHUB_REF"} {
+		if m := pullRefPattern.FindStringSubmatch(getenv(name)); m != nil {
+			n, err := strconv.Atoi(m[1])
+			if err == nil && n > 0 {
+				return n, name, nil
+			}
+		}
+	}
+
+	ref, source := fallbackRef, "newest commit on "+fallbackRef
+	for _, name := range []string{"CI_COMMIT_SHA", "GITHUB_SHA"} {
+		if sha := getenv(name); sha != "" {
+			ref, source = sha, "commit "+name
+			break
+		}
+	}
+
+	msg, err := git.GetCommitMessage(ref)
+	if err != nil {
+		return 0, source, fmt.Errorf("failed to get commit message from %s: %w", ref, err)
+	}
+	log.Debug().Str("ref", ref).Str("message", msg).Msg("commit message")
+
+	return parsePRNumber(msg), source, nil
+}
+
+// formatFailureComment describes the backports that failed, for a comment on
+// the original PR. It returns an empty string if none failed.
+func formatFailureComment(results []CIResult, prNumber int) string {
+	var failed []CIResult
+	for _, r := range results {
+		if r.Error != nil && !r.Skipped {
+			failed = append(failed, r)
+		}
+	}
+	if len(failed) == 0 {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString("The automatic backport of this PR failed and needs to be done by hand:\n\n")
+	for _, r := range failed {
+		fmt.Fprintf(&sb, "- `%s`: %s\n", r.TargetBranch, r.Message)
+	}
+	sb.WriteString("\nTo backport it locally, resolve the conflicts and open the PR:\n\n```sh\n")
+	for _, r := range failed {
+		fmt.Fprintf(&sb, "backporter backport pr %d %s\n", prNumber, r.TargetBranch)
+	}
+	sb.WriteString("```\n")
+	return sb.String()
 }
 
 // parsePRNumber extracts PR number from a commit message.
@@ -320,7 +397,7 @@ func formatBackportPRBody(originalPR *forge.PRInfo, targetBranch string) string 
 	}
 
 	sb.WriteString("\n---\n")
-	sb.WriteString("*This PR was automatically created by [backporter](https://github.com/pat-s/backporter) in CI mode.*\n")
+	sb.WriteString("*This PR was automatically created by [backporter](https://codefloe.com/pat-s/backporter) in CI mode.*\n")
 
 	return sb.String()
 }

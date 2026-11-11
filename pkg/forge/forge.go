@@ -23,6 +23,9 @@ type Forge interface {
 	// ListOpenPRs lists open PRs, optionally filtered by head branch.
 	ListOpenPRs(ctx context.Context, owner, repo string, opts ListPROptions) ([]*PRInfo, error)
 
+	// CommentOnPR posts a comment on a pull request.
+	CommentOnPR(ctx context.Context, owner, repo string, number int, body string) error
+
 	// Name returns the name of the forge.
 	Name() string
 }

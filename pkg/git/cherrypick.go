@@ -212,3 +212,24 @@ func ConfigureUserForCI(forgeType string) (bool, error) {
 
 	return configured, nil
 }
+
+// ListRemoteBranches returns the names of the branches the given remote has,
+// without the remote prefix, as of the last fetch.
+func ListRemoteBranches(remote string) ([]string, error) {
+	prefix := "refs/remotes/" + remote + "/"
+	cmd := exec.Command("git", "for-each-ref", "--format=%(refname)", prefix)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list branches of %s: %w", remote, err)
+	}
+
+	var branches []string
+	for line := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+		name := strings.TrimPrefix(line, prefix)
+		if name == "" || name == "HEAD" {
+			continue
+		}
+		branches = append(branches, name)
+	}
+	return branches, nil
+}

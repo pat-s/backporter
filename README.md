@@ -13,7 +13,7 @@ A CLI tool for backporting git commits and pull requests to target branches.
 - Interactive mode with branch and PR selection
 - CI mode for automatic backporting on PR merge
 - Support for GitHub and Forgejo/Gitea forges
-- Configurable target branches (supports regex patterns)
+- Configurable target branches, including the newest branch matching a pattern
 - Cache of backported commits/PRs for tracking
 - Colored terminal output
 
@@ -87,10 +87,10 @@ backporter backport --ci
 
 This command:
 
-1. Reads the most recent commit on the current branch
-2. Parses the PR number from the commit message
-3. Checks if the PR has any label containing "backport"
-4. If so, creates backport branches and PRs for all configured target branches
+1. Finds the merged PR: from `--pr` (or `BACKPORTER_PR`), from the pull request ref of a pull request event (`CI_COMMIT_REF` in Crow and Woodpecker, `GITHUB_REF` in GitHub and Forgejo Actions), or from the message of the commit a push event ran for (`CI_COMMIT_SHA`, `GITHUB_SHA`), falling back to the newest commit on the default branch
+2. Checks if the PR has any label containing "backport"
+3. If so, creates backport branches and PRs for all configured target branches
+4. If a backport fails, for example on a conflict, comments on the original PR with the branches that need a manual backport
 
 The backport PR title uses the conventional commit prefix from the original PR (e.g., `feat(api):` becomes `feat(api): backport #123 to release-1.x`). If no prefix is found, it defaults to `fix:`.
 
@@ -164,6 +164,18 @@ steps:
       - backporter backport --ci
 ```
 
+#### Target only the newest release branch
+
+Projects that only patch their newest release can let the target follow it, instead of editing the config whenever a release branch is cut:
+
+```yaml
+target_branches:
+  - latest:release/v*
+```
+
+`latest:` takes a glob in which `*` does not match `/`, and picks the matching branch of the remote with the highest version, comparing runs of digits as numbers.
+`backport pr` and `backport commit` without a target branch resolve `latest:` the same way, against the remote branches as of the last fetch. Interactive mode ignores `latest:` targets.
+
 #### Action Inputs
 
 | Input            | Description                                    | Required | Default  |
@@ -187,11 +199,14 @@ forge_type: forgejo
 # Forgejo instance URL (only for forgejo)
 # forgejo_url: https://codefloe.com
 
-# Default target branches (supports regex)
+# Default target branches
 target_branches:
   - release-1.x
   - release-2.x
   - stable
+  # The newest branch matching a glob, comparing numbers numerically
+  # (release/v0.10 is newer than release/v0.9). Skipped if nothing matches.
+  - latest:release/v*
 
 # Default branch to work from
 default_branch: main
